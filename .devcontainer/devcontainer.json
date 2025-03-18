@@ -1,0 +1,14 @@
+{
+  "name": "LanggraphjsGenUIExamples",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "mounts": [
+    "source=${localWorkspaceFolderBasename}-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume",
+    "source=${localWorkspaceFolderBasename}-pnpm-store,target=${containerWorkspaceFolder}/.pnpm-store,type=volume"
+  ],
+  "postCreateCommand": "sh .devcontainer/hooks/postCreateCommand.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": ["esbenp.prettier-vscode"]
+    }
+  }
+}

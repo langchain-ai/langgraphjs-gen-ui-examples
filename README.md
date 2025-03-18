@@ -84,6 +84,24 @@ The following are some prompts, and corresponding graph IDs you can use to test 
 - Graph ID: `email_agent`:
   - `Write me an email to <insert email here> about <insert email description here>` - Will generate an email for you, addressed to the email address you specified. Used to demonstrate how you can trigger the built in Human in the Loop (HITL) UI in the Agent Chat UI. This agent will throw an `interrupt`, with the standard [`HumanInterrupt`](https://github.com/langchain-ai/langgraph/blob/84c956bc8c3b2643819677bea962425e02e15ba4/libs/prebuilt/langgraph/prebuilt/interrupt.py#L42) schema, which the Agent Chat UI is able to automatically detect, and render a HITL UI component to manage the interrupt.
 
+## Devcontainer setup
+
+[![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/langchain-ai/langgraphjs-gen-ui-examples)
+
+Click the badge above if you wanna, you can run the project in a devcontainer.
+
+Otherwise, clone the repo and open the directory with VSCode and run it in a devcontainer.
+
+During the startup process a `.env` file will be created, starting from `.env.example`. All dependecies will be installed automatically, so no need for a `pnpm i `.
+
+You need to set you all the required API keys in `.env` file.
+
+Start the LangGraph server:
+
+```bash
+pnpm agent --host 127.0.0.1
+```
+
 # Agents
 
 Key
