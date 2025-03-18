@@ -86,9 +86,15 @@ The following are some prompts, and corresponding graph IDs you can use to test 
 
  ## Devcontainer setup
 
-If you wanna run the project in a devcontainer, you could skip some of the previous steps.
+[![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/langchain-ai/langgraphjs-gen-ui-examples)
 
-You need to set you all the required API keys in `.env` file, created automatically by the devcontainer setup process, as described above.
+Click the badge above if you wanna, you can run the project in a devcontainer.
+
+Otherwise, clone the repo and open the directory with VSCode and run it in a devcontainer.
+
+During the startup process a `.env` file will be created, starting from `.env.example`. All dependecies will be installed automatically, so no need for a `pnpm i `.
+
+You need to set you all the required API keys in `.env` file.
 
 Start the LangGraph server:
 
