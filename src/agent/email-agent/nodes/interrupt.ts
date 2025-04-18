@@ -28,7 +28,7 @@ ${state.email.body}
 
 - **Ignore**: Ignoring the email will end the conversation, and the email will not be sent.`;
 
-  const res = interrupt<HumanInterrupt[], HumanResponse[]>([
+  const res = interrupt<HumanInterrupt, HumanResponse[]>(
     {
       action_request: {
         action: "New Email Draft",
@@ -44,7 +44,7 @@ ${state.email.body}
         allow_accept: true,
       },
     },
-  ])[0];
+  )[0];
 
   if (["ignore", "response", "accept"].includes(res.type)) {
     return {

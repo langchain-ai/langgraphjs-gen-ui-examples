@@ -9,5 +9,8 @@
     "agent": "./src/agent-uis/index.tsx"
   },
   "env": ".env",
-  "dependencies": ["."]
+  "dependencies": ["."],
+  "auth": {
+    "path": "./src/auth.ts:auth"
+  }
 }

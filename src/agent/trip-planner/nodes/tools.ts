@@ -86,7 +86,5 @@ export async function callTools(
 
   return {
     messages: [response],
-    ui: ui.items,
-    timestamp: Date.now(),
   };
 }

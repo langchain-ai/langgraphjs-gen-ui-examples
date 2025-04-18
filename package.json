@@ -21,12 +21,11 @@
     "@assistant-ui/react-syntax-highlighter": "^0.7.2",
     "@faker-js/faker": "^9.5.1",
     "@langchain/anthropic": "^0.3.15",
+    "@langchain/langgraph-api": "*",
+    "@langchain/langgraph-cli": "*",
     "@langchain/core": "^0.3.42",
     "@langchain/google-genai": "^0.1.10",
     "@langchain/langgraph": "^0.2.54",
-    "@langchain/langgraph-api": "^0.0.15",
-    "@langchain/langgraph-checkpoint": "^0.0.16",
-    "@langchain/langgraph-cli": "^0.0.15",
     "@langchain/langgraph-sdk": "^0.0.53",
     "@langchain/openai": "^0.4.4",
     "@radix-ui/react-avatar": "^1.1.3",
@@ -84,7 +83,10 @@
     "vite": "^6.1.0"
   },
   "overrides": {
-    "react-is": "^19.0.0-rc-69d4b800-20241021"
+    "react-is": "^19.0.0-rc-69d4b800-20241021",
+    "@langchain/langgraph-api": "http://localhost:3123/18/@langchain/langgraph-api",
+    "@langchain/langgraph-cli": "http://localhost:3123/18/@langchain/langgraph-cli",
+    "@langchain/langgraph-sdk": "http://localhost:3123/18/@langchain/langgraph-sdk"
   },
-  "packageManager": "pnpm@10.5.1+sha512.c424c076bd25c1a5b188c37bb1ca56cc1e136fbf530d98bcb3289982a08fd25527b8c9c4ec113be5e3393c39af04521dd647bcf1d0801eaf8ac6a7b14da313af"
+  "packageManager": "pnpm@10.5.1"
 }

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { ALL_TOOL_DESCRIPTIONS } from "../index";
+import { ALL_TOOL_DESCRIPTIONS, ALL_TOOL_NAMES } from "../index";
 import { SupervisorState, SupervisorUpdate } from "../types";
 import { formatMessages } from "@/agent/utils/format-messages";
 
@@ -13,13 +13,7 @@ ${ALL_TOOL_DESCRIPTIONS}
 `;
   const routerSchema = z.object({
     route: z
-      .enum([
-        "stockbroker",
-        "tripPlanner",
-        "openCode",
-        "orderPizza",
-        "generalInput",
-      ])
+      .enum([ALL_TOOL_NAMES[0], ...ALL_TOOL_NAMES.slice(1)])
       .describe(routerDescription),
   });
   const routerTool = {
@@ -67,6 +61,6 @@ Please pick the proper route based on the most recent message, in the context of
   }
 
   return {
-    next: toolCall.route,
+    next: toolCall.route as any,
   };
 }
