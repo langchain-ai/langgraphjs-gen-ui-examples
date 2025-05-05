@@ -44,62 +44,100 @@ async function getPricesForTicker(ticker: string): Promise<{
 
   const url = "https://api.financialdatasets.ai/prices";
 
-  const oneMonthAgo = format(subDays(new Date(), 30), "yyyy-MM-dd");
-  const now = format(new Date(), "yyyy-MM-dd");
-
-  const queryParamsOneDay = new URLSearchParams({
-    ticker,
-    interval: "minute",
-    interval_multiplier: "5",
-    start_date: now,
-    end_date: now,
-    limit: "5000",
-  });
-
-  const queryParamsThirtyDays = new URLSearchParams({
-    ticker,
-    interval: "minute",
-    interval_multiplier: "30",
-    start_date: oneMonthAgo,
-    end_date: now,
-    limit: "5000",
-  });
-
-  const [resOneDay, resThirtyDays] = await Promise.all([
-    fetch(`${url}?${queryParamsOneDay.toString()}`, options),
-    fetch(`${url}?${queryParamsThirtyDays.toString()}`, options),
-  ]);
-
-  if (!resOneDay.ok || !resThirtyDays.ok) {
-    throw new Error("Failed to fetch prices");
-  }
-
-  const { prices: pricesOneDay } = await resOneDay.json();
-  const { prices: pricesThirtyDays, next_page_url } =
-    await resThirtyDays.json();
-
-  let nextPageUrlThirtyDays = next_page_url;
-
-  let iters = 0;
-  while (nextPageUrlThirtyDays) {
-    if (iters > 10) {
-      throw new Error("MAX ITERS REACHED");
+  // Get snapshot first to determine the latest available data point
+  try {
+    const snapshotUrl = `https://api.financialdatasets.ai/prices/snapshot?ticker=${ticker}`;
+    const snapshotResponse = await fetch(snapshotUrl, options);
+    
+    if (!snapshotResponse.ok) {
+      throw new Error(`Failed to fetch price snapshot for ${ticker}: ${snapshotResponse.status} ${snapshotResponse.statusText}`);
     }
-    try {
-      const nextPageData = await getNextPageData(nextPageUrlThirtyDays);
-      pricesThirtyDays.push(...nextPageData.prices);
-      nextPageUrlThirtyDays = nextPageData.next_page_url;
-      iters += 1;
-    } catch (e) {
-      console.error(e);
-      break;
-    }
-  }
+    
+    const snapshotData = await snapshotResponse.json();
+    const latestDataDate = snapshotData.snapshot?.time 
+      ? format(new Date(snapshotData.snapshot.time), "yyyy-MM-dd")
+      : format(subDays(new Date(), 1), "yyyy-MM-dd"); // Fallback to yesterday
+    
+    const oneMonthAgo = format(subDays(new Date(), 30), "yyyy-MM-dd");
+    
+    // Use the latest available data date instead of today's date
+    const queryParamsOneDay = new URLSearchParams({
+      ticker,
+      interval: "minute",
+      interval_multiplier: "5",
+      start_date: latestDataDate,
+      end_date: latestDataDate,
+      limit: "5000",
+    });
 
-  return {
-    oneDayPrices: pricesOneDay,
-    thirtyDayPrices: pricesThirtyDays,
-  };
+    const queryParamsThirtyDays = new URLSearchParams({
+      ticker,
+      interval: "minute",
+      interval_multiplier: "30",
+      start_date: oneMonthAgo,
+      end_date: latestDataDate, // Use latest date instead of now
+      limit: "5000",
+    });
+
+    // Fetch both datasets
+    const [resOneDay, resThirtyDays] = await Promise.all([
+      fetch(`${url}?${queryParamsOneDay.toString()}`, options),
+      fetch(`${url}?${queryParamsThirtyDays.toString()}`, options),
+    ]);
+
+    // Handle thirty-day data - this is critical
+    if (!resThirtyDays.ok) {
+      throw new Error(`Failed to fetch 30-day price data for ${ticker}: ${resThirtyDays.status} ${resThirtyDays.statusText}`);
+    }
+    
+    const thirtyDaysData = await resThirtyDays.json();
+    const thirtyDayPrices = thirtyDaysData.prices || [];
+    let nextPageUrlThirtyDays = thirtyDaysData.next_page_url;
+
+    // Handle one-day data - allow this to fail gracefully
+    let oneDayPrices: Price[] = [];
+    if (resOneDay.ok) {
+      const oneDayData = await resOneDay.json();
+      oneDayPrices = oneDayData.prices || [];
+    } else {
+      console.warn(`No intraday price data available for ${ticker} on ${latestDataDate}. Using most recent data from 30-day history.`);
+      // If one-day data is unavailable, use the most recent day from thirty-day data
+      if (thirtyDayPrices.length > 0) {
+        const latestDate = format(new Date(thirtyDayPrices[thirtyDayPrices.length - 1].time), "yyyy-MM-dd");
+        const latestDayPrices = thirtyDayPrices.filter((price: Price) => 
+          format(new Date(price.time), "yyyy-MM-dd") === latestDate
+        );
+        oneDayPrices = latestDayPrices;
+      }
+    }
+
+    // Fetch additional pages for thirty-day data if needed
+    let iters = 0;
+    while (nextPageUrlThirtyDays) {
+      if (iters > 10) {
+        console.warn("Maximum pagination iterations reached for thirty-day data");
+        break;
+      }
+      try {
+        const nextPageData = await getNextPageData(nextPageUrlThirtyDays);
+        thirtyDayPrices.push(...nextPageData.prices);
+        nextPageUrlThirtyDays = nextPageData.next_page_url;
+        iters += 1;
+      } catch (e) {
+        console.error("Error fetching next page data:", e);
+        break;
+      }
+    }
+
+    return {
+      oneDayPrices,
+      thirtyDayPrices,
+    };
+  } catch (error: unknown) {
+    console.error("Error in getPricesForTicker:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to fetch prices for ${ticker}: ${errorMessage}`);
+  }
 }
 
 async function getPriceSnapshotForTicker(ticker: string): Promise<Snapshot> {
