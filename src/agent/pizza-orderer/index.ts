@@ -4,6 +4,7 @@ import { GenerativeUIAnnotation } from "../types";
 import { z } from "zod";
 import { AIMessage, ToolMessage } from "@langchain/langgraph-sdk";
 import { v4 as uuidv4 } from "uuid";
+import { ChatOpenAI } from "@langchain/openai";
 
 const PizzaOrdererAnnotation = Annotation.Root({
   messages: GenerativeUIAnnotation.spec.messages,
@@ -30,8 +31,8 @@ const workflow = new StateGraph(PizzaOrdererAnnotation)
           ),
       })
       .describe("The schema for finding a pizza shop for the user");
-    const model = new ChatAnthropic({
-      model: "claude-3-5-sonnet-latest",
+    const model = new ChatOpenAI({
+      model: "gpt-4o",
       temperature: 0,
     }).withStructuredOutput(findShopSchema, {
       name: "find_pizza_shop",
@@ -76,8 +77,8 @@ const workflow = new StateGraph(PizzaOrdererAnnotation)
         order: z.string().describe("The full pizza order for the user"),
       })
       .describe("The schema for ordering a pizza for the user");
-    const model = new ChatAnthropic({
-      model: "claude-3-5-sonnet-latest",
+    const model = new ChatOpenAI({
+      model: "gpt-4o",
       temperature: 0,
     }).withStructuredOutput(placeOrderSchema, {
       name: "place_pizza_order",

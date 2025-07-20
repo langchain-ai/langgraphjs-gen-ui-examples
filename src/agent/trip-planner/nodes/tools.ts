@@ -41,47 +41,85 @@ export async function callTools(
     ACCOMMODATIONS_TOOLS,
   );
 
-  const response = await llm.invoke([
-    {
-      role: "system",
-      content:
-        "You are an AI assistant who helps users book trips. Use the user's most recent message(s) to contextually generate a response.",
-    },
-    ...state.messages,
-  ]);
+  const systemPrompt = {
+    role: "system",
+    content: `You are an AI assistant who helps users book trips. When a user asks about a trip or destination, you should:
+1. Use the list-accommodations tool to show available accommodations.
+2. Use the list-restaurants tool to show local dining options.
 
-  const listAccommodationsToolCall = response.tool_calls?.find(
-    findToolCall("list-accommodations")<typeof listAccommodationsSchema>,
-  );
-  const listRestaurantsToolCall = response.tool_calls?.find(
-    findToolCall("list-restaurants")<typeof listRestaurantsSchema>,
-  );
+After using these tools, always summarize the results in a friendly, readable text reply for the user.
+- List the top accommodations and restaurants you found, including their names, prices, and ratings if available.
+- If no results are found, say so.
+- Always include this summary in your reply, even if the user did not specifically ask for it.
 
-  if (!listAccommodationsToolCall && !listRestaurantsToolCall) {
-    throw new Error("No tool calls found");
-  }
+These tools should be used for ANY trip-related query, even if the user hasn't specifically asked about accommodations or restaurants yet.
 
-  if (listAccommodationsToolCall) {
-    ui.push(
-      {
-        name: "accommodations-list",
-        props: {
-          toolCallId: listAccommodationsToolCall.id ?? "",
-          ...getAccommodationsListProps(state.tripDetails),
-        },
-      },
-      { message: response },
-    );
-  }
+Current trip details:
+- Location: ${state.tripDetails.location}
+- Start Date: ${state.tripDetails.startDate}
+- End Date: ${state.tripDetails.endDate}
+- Number of Guests: ${state.tripDetails.numberOfGuests}`,
+  };
 
-  if (listRestaurantsToolCall) {
-    ui.push(
-      {
-        name: "restaurants-list",
-        props: { tripDetails: state.tripDetails },
-      },
-      { message: response },
-    );
+  let messages: any[] = [systemPrompt, ...state.messages];
+  let response = await llm.invoke(messages);
+
+  // Tool call loop
+  while (response.tool_calls && response.tool_calls.length > 0) {
+    // 1. Generate tool messages for each tool call
+    const toolMessages = response.tool_calls
+      .map((toolCall: any) => {
+        if (toolCall.name === "list-accommodations") {
+          const accommodationsData = getAccommodationsListProps(
+            state.tripDetails as import("../types").TripDetails,
+          );
+          ui.push(
+            {
+              name: "accommodations-list",
+              props: {
+                toolCallId: toolCall.id ?? "",
+                ...accommodationsData,
+              },
+            },
+            { message: response },
+          );
+          return {
+            role: "tool",
+            tool_call_id: toolCall.id,
+            name: toolCall.name,
+            content: JSON.stringify(accommodationsData.accommodations),
+          };
+        } else if (toolCall.name === "list-restaurants") {
+          ui.push(
+            {
+              name: "restaurants-list",
+              props: {
+                tripDetails:
+                  state.tripDetails as import("../types").TripDetails,
+              },
+            },
+            { message: response },
+          );
+          return {
+            role: "tool",
+            tool_call_id: toolCall.id,
+            name: toolCall.name,
+            content: "(Restaurant data coming soon!)",
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+    // 2. Only send: systemPrompt, userMessages, last ai message, tool messages
+    messages = [systemPrompt, ...state.messages, response, ...toolMessages];
+    response = await llm.invoke(messages);
+    if (
+      typeof response.content === "string" &&
+      response.content.trim() !== ""
+    ) {
+      break;
+    }
   }
 
   return {

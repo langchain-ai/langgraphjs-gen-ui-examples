@@ -19,8 +19,9 @@ import { findToolCall } from "../find-tool-call";
 import { GenerativeUIAnnotation } from "../types";
 
 import type ComponentMap from "../../agent-uis/index";
+import { ChatOpenAI } from "@langchain/openai";
 
-const MODEL_NAME = "claude-3-5-sonnet-latest";
+const MODEL_NAME = "gpt-4o";
 
 const WriterAnnotation = Annotation.Root({
   messages: GenerativeUIAnnotation.spec.messages,
@@ -150,7 +151,7 @@ async function suggestions(state: WriterState): WriterUpdate {
     messages.push({ type: "tool", content: "Finished", tool_call_id: tool.id });
   }
 
-  const model = new ChatAnthropic({ model: MODEL_NAME });
+  const model = new ChatOpenAI({ model: MODEL_NAME });
   const finish = await model.invoke(messages);
   messages.push(finish);
 

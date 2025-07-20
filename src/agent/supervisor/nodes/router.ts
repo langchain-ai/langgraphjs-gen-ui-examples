@@ -3,6 +3,7 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ALL_TOOL_DESCRIPTIONS } from "../index";
 import { SupervisorState, SupervisorUpdate } from "../types";
 import { formatMessages } from "@/agent/utils/format-messages";
+import { ChatOpenAI } from "@langchain/openai";
 
 export async function router(
   state: SupervisorState,
@@ -29,8 +30,8 @@ ${ALL_TOOL_DESCRIPTIONS}
     schema: routerSchema,
   };
 
-  const llm = new ChatGoogleGenerativeAI({
-    model: "gemini-2.0-flash",
+  const llm = new ChatOpenAI({
+    model: "gpt-4o",
     temperature: 0,
   })
     .bindTools([routerTool], { tool_choice: "router" })
